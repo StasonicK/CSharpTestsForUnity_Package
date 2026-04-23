@@ -1,4 +1,6 @@
 {
 	"name": "UnityTests",
-	"author": "StasonicK"
+	"author": "StasonicK",
+	"version" : "0.0.1",
+	"description": "Test suite for Unity projects developed for OGames"
 }
