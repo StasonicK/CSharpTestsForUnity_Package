@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "dgSpecHash": "zumwiMDOW+Q=",
+  "success": true,
+  "projectFilePath": "C:\\Unity projects\\UnitTestsFramework\\CSharpTestToolForUnity\\CSharpTestToolForUnity.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\dpobo\\.nuget\\packages\\castle.core\\5.1.1\\castle.core.5.1.1.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\coverlet.collector\\6.0.2\\coverlet.collector.6.0.2.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\diffengine\\11.3.0\\diffengine.11.3.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\emptyfiles\\4.4.0\\emptyfiles.4.4.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.codecoverage\\17.8.0\\microsoft.codecoverage.17.8.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.net.test.sdk\\17.8.0\\microsoft.net.test.sdk.17.8.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.testplatform.objectmodel\\17.8.0\\microsoft.testplatform.objectmodel.17.8.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.testplatform.testhost\\17.8.0\\microsoft.testplatform.testhost.17.8.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\nsubstitute\\5.3.0\\nsubstitute.5.3.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\nsubstitute.analyzers.csharp\\1.0.17\\nsubstitute.analyzers.csharp.1.0.17.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\nuget.frameworks\\6.5.0\\nuget.frameworks.6.5.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\nunit\\4.3.2\\nunit.4.3.2.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\nunit3testadapter\\4.6.0\\nunit3testadapter.4.6.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\shouldly\\4.2.1\\shouldly.4.2.1.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\system.codedom\\6.0.0\\system.codedom.6.0.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\system.diagnostics.eventlog\\6.0.0\\system.diagnostics.eventlog.6.0.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\system.management\\6.0.1\\system.management.6.0.1.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\system.reflection.metadata\\1.6.0\\system.reflection.metadata.1.6.0.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.15\\microsoft.netcore.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.15\\microsoft.windowsdesktop.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\dpobo\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.15\\microsoft.aspnetcore.app.ref.9.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}
