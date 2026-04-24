@@ -14,10 +14,9 @@ CSharpTestToolForUnity/
   package.json                  - UPM package descriptor
   CSharpTestToolForUnity.csproj - test project
   CSharpTestToolForUnity.sln    - standalone solution for Rider / VS
-  test.cmd                      - CMD launcher
-  test.ps1                      - runner (all logic lives here)
+  test.cmd                      - CMD runner (all logic here)
+  test.ps1                      - PowerShell runner (optional fallback)
   test.runsettings              - NUnit/VSTest settings
-  init.ps1                      - one-time PowerShell profile setup
   README.md
 
   Editor/                       - Unity Editor menu (CPM RP Tools > CSharp Test Tool)
@@ -44,42 +43,32 @@ Add to `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "com.ogames.csharptesttoolforunity": "https://github.com/yourname/CSharpTestToolForUnity.git#0.0.6"
+    "com.ogames.csharptesttoolforunity": "https://github.com/yourname/CSharpTestToolForUnity.git#0.0.9"
   }
 }
 ```
 
 Or via Unity Editor: `Window > Package Manager > + > Add package from git URL`.
 
-### 2. Register `test` in PowerShell
+### 2. Open a terminal in the package folder
 
 **Option A - Unity Editor menu (recommended):**
-
 ```
-CPM RP Tools > CSharp Test Tool > Setup PowerShell (run once)
+CPM RP Tools > CSharp Test Tool > Open Terminal Here
 ```
+Opens CMD directly in the package folder. Type `test all` immediately.
 
-Opens a PowerShell window and runs `init.ps1` automatically. No path typing needed.
-
-**Option B - manually from the package folder:**
-
-```powershell
-# The package is installed at Library/PackageCache/com.ogames.csharptesttoolforunity@<hash>
-# Or use the helper script at your project root:
-./SetupTestTool.ps1
+**Option B - manually:**
+```cmd
+cd "C:\Unity projects\YourProject\Library\PackageCache\com.ogames.csharptesttoolforunity@<hash>"
+test examples
 ```
 
-After running either option, restart PowerShell. `test` is now registered for every future session.
+### 3. Restore NuGet packages (first time only)
 
-### 3. Restore NuGet packages
-
-```
+```cmd
 dotnet restore
 ```
-
-Run this from the package folder (or `Open Terminal Here` from the Unity menu).
-
-> **CMD users** - skip the init step. `test all` works immediately.
 
 ---
 
@@ -93,49 +82,56 @@ Run this from the package folder (or `Open Terminal Here` from the Unity menu).
 | `test <Script.cs>` | Run tests in a single script (`.cs` required) |
 | `test info` | Show help |
 
+No setup or registration needed. CMD finds `test.cmd` in the current folder automatically.
+
 ---
 
 ## Coverage Flag
 
 Add `coverage` anywhere in the command to collect code coverage,
-generate an HTML report and open it in the browser automatically.
+generate an HTML report and open it in the browser.
 
-```powershell
+```cmd
 test examples coverage
 test all coverage
-test Tests/UnitTests/HealthSystemTests.cs coverage
-test Tests/Integration coverage
-test coverage examples        # flag position does not matter
+test Tests\UnitTests\HealthSystemTests.cs coverage
+test Tests\Integration coverage
+test coverage examples
 ```
 
-Reports are saved to:
-- `coverage-examples/html/index.html` - for package example tests
-- `coverage/html/index.html` - for your project tests
+The `coverage` word is detected as a standalone token - safe inside path names.
 
-Requires `reportgenerator` (installed automatically on first use).
+Reports are saved to:
+- `coverage-examples\html\index.html` - for package example tests
+- `coverage\html\index.html` - for your project tests
+
+Requires `reportgenerator` (installed automatically on first use):
+```cmd
+dotnet tool install -g dotnet-reportgenerator-globaltool
+```
 
 ---
 
 ## Path Rules
 
-Paths are relative to the tool folder. Both slash directions accepted. Case-insensitive.
+Paths are relative to the tool folder. Both `\` and `/` accepted. Case-insensitive.
 
 **Folder** - no `.cs` extension:
-```powershell
+```cmd
 test Tests
-test Tests/Integration
-test Tests/UnitTests
+test Tests\Integration
+test Tests\UnitTests
 ```
 
 **Script** - `.cs` extension required:
-```powershell
-test Tests/UnitTests/HealthSystemTests.cs
-test Tests/Integration/CombatIntegrationTests.cs
-test Examples/SubstituteExamples.cs
+```cmd
+test Tests\UnitTests\HealthSystemTests.cs
+test Tests\Integration\CombatIntegrationTests.cs
+test Examples\SubstituteExamples.cs
 ```
 
-Short suffix search works if the match is unique:
-```powershell
+Filename-only search (no path needed if unique):
+```cmd
 test HealthSystemTests.cs
 ```
 
@@ -156,6 +152,21 @@ test HealthSystemTests.cs
      Expected : 42.5
      Actual   : 0
 ```
+
+---
+
+## Unity Editor Menu
+
+```
+CPM RP Tools
+  └── CSharp Test Tool
+        ├── Open Terminal Here    opens CMD in the package folder
+        ├── Run Examples          opens CMD and runs 'test examples'
+        └── Show Help             opens CMD and runs 'test info'
+```
+
+The menu finds the package path automatically - works whether installed from
+`Packages/` folder or `Library/PackageCache/` (git/registry install with `@hash` suffix).
 
 ---
 
@@ -210,7 +221,7 @@ public class CombatIntegrationTests : IntegrationTestBase
 
 | Property | Type | Role |
 |---|---|---|
-| `Time` | `ITimeProvider` | Stub - `World.Time.DeltaTime.Returns(x)` |
+| `Time` | `ITimeProvider` | Stub |
 | `Analytics` | `IAnalyticsService` | Mock - verify with `.Received()` |
 | `Persistence` | `IPersistenceService` | Mock / stub |
 | `DiedBus` | `IEventBus<PlayerDiedEvent>` | Isolated instance |
@@ -273,15 +284,15 @@ Open `CSharpTestToolForUnity.csproj` and uncomment:
 ```
 
 Adjust the path to your project's pure C# scripts.
-Use a different namespace (e.g. `MyGame.Tests`) so `test all` picks up your
-tests without touching the built-in package tests.
+Use a different namespace (e.g. `MyGame.Tests`) so `test all` runs your tests
+without touching the built-in package tests.
 
 ---
 
 ## Rider / Visual Studio
 
 The package includes `Editor/CSharpTestToolSolutionHook.cs` which injects
-`CSharpTestToolForUnity.csproj` into the Unity solution automatically on every recompile.
+`CSharpTestToolForUnity.csproj` into the Unity solution on every recompile.
 Open the Unity solution in Rider - `CSharpTestToolForUnity` appears as a project.
 
 To open the tool in isolation:

@@ -3,6 +3,6 @@
 	"author": "StasonicK",
 	"displayName": "CSharp Test Tool For Unity",
 	"description": "C# test runner for Unity. Runs pure C# unit and integration tests via dotnet test without Unity Editor or Play Mode.",
-	"version" : "0.0.10",
+	"version" : "0.0.11",
 	"description": "Test suite for Unity projects developed for OGames"
 }
