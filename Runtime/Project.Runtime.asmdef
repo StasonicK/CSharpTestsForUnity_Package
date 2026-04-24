@@ -1,0 +1,8 @@
+{
+    "name": "Project.Runtime",
+    "references": [],
+    "includePlatforms": ["Editor"],
+    "autoReferenced": false,
+    "defineConstraints": ["HEADLESS_ONLY"],
+    "noEngineReferences": true
+}

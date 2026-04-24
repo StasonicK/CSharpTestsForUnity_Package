@@ -1,0 +1,8 @@
+{
+    "name": "Project.Tests.Common",
+    "references": ["Project.Runtime"],
+    "includePlatforms": ["Editor"],
+    "autoReferenced": false,
+    "defineConstraints": ["HEADLESS_ONLY"],
+    "noEngineReferences": false
+}
