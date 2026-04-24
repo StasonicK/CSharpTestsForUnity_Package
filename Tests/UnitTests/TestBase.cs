@@ -5,7 +5,7 @@ namespace Project.Tests.UnitTests
 {
     public abstract class TestBase
     {
-        [SetUp]    public void OnStart() => TestOutputHelper.LogStart();
+        [SetUp]    public void OnStart() => TestOutputHelper.LogStart(GetType());
         [TearDown] public void OnEnd()   => TestOutputHelper.LogEnd();
     }
 }

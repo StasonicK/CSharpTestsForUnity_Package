@@ -8,6 +8,8 @@
     <!-- Suppress: Unity types reference each other across DLLs; some will be unresolved at compile time -->
     <NoWarn>CS0436;CS0618;CS1701</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <!-- Standard Test Packages -->
@@ -21,15 +23,16 @@
     <PackageReference Include="Shouldly" Version="4.2.1" />
   </ItemGroup>
 
-  <!-- The Magic: Linking Unity Scripts (edits here = edits in Unity Assets) -->
-  <ItemGroup>
-    <!-- Runtime logic — pure C#, no MonoBehaviour lifecycle dependency -->
-    <Compile Include="..\Assets\Scripts\Runtime\**\*.cs" LinkBase="Runtime" />
-    <!-- Exclude Views — MonoBehaviours with Unity UI dependencies -->
-    <Compile Remove="..\Assets\Scripts\Runtime\Views\**\*.cs" />
-    <!-- Test code -->
-    <Compile Include="..\Assets\Scripts\Tests\**\*.cs" LinkBase="Tests" />
-  </ItemGroup>
+  <!-- Source files — SDK auto-includes all *.cs in project folder (Runtime/, Tests/, Examples/) -->
+  <!--
+    TO TEST YOUR PROJECT SCRIPTS: uncomment and adjust the path below.
+    Add only pure C# files — exclude Views/ and MonoBehaviours.
+
+    <ItemGroup>
+      <Compile Include="..\Assets\Scripts\Runtime\**\*.cs" LinkBase="ProjectRuntime" />
+      <Compile Remove="..\Assets\Scripts\Runtime\Views\**\*.cs" />
+    </ItemGroup>
+  -->
 
   <!--
     Unity Managed DLL References

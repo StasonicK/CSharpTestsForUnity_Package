@@ -3,15 +3,21 @@ using NUnit.Framework.Interfaces;
 
 namespace Project.Tests.Common
 {
-    /// <summary>
-    /// Shared test output logic used by both UnitTests and Integration base classes.
-    /// Prints: >> TestName, Expected/Actual on failure, PASSED/FAILED.
-    /// </summary>
     public static class TestOutputHelper
     {
-        public static void LogStart()
+        private static string? _lastClass = null;
+
+        public static void LogStart(Type testClass)
         {
-            try { TestContext.Progress.WriteLine($"\n  >> {TestContext.CurrentContext.Test.Name}"); }
+            try
+            {
+                if (_lastClass != testClass.Name)
+                {
+                    _lastClass = testClass.Name;
+                    Console.WriteLine($"\n  ---- {testClass.Name} ----");
+                }
+                Console.WriteLine($"  >> {TestContext.CurrentContext.Test.Name}");
+            }
             catch { }
         }
 
@@ -19,39 +25,26 @@ namespace Project.Tests.Common
         {
             try
             {
-                var result = TestContext.CurrentContext.Result;
-                if (result.Outcome.Status == TestStatus.Passed)
-                    { TestContext.Progress.WriteLine("     PASSED"); return; }
-                if (!string.IsNullOrWhiteSpace(result.Message))
-                    PrintFailure(result.Message);
-                TestContext.Progress.WriteLine("     FAILED");
+                var r = TestContext.CurrentContext.Result;
+                if (r.Outcome.Status == TestStatus.Passed) { Console.WriteLine("     PASSED"); return; }
+                if (!string.IsNullOrWhiteSpace(r.Message)) PrintFailure(r.Message);
+                Console.WriteLine("     FAILED");
             }
             catch { }
         }
 
-        private static void PrintFailure(string message)
+        private static void PrintFailure(string msg)
         {
-            string? expected = null, actual = null;
-            foreach (var raw in message.Split('\n'))
+            string? exp = null, act = null;
+            foreach (var raw in msg.Split('\n'))
             {
-                var line = raw.Trim();
-                if      (line.StartsWith("Expected:")) expected = line.Substring(9).Trim();
-                else if (line.StartsWith("But was:"))  actual   = line.Substring(8).Trim();
-                else if (line.StartsWith("Actually:")) actual   = line.Substring(9).Trim();
+                var l = raw.Trim();
+                if (l.StartsWith("Expected:")) exp = l.Substring(9).Trim();
+                else if (l.StartsWith("But was:")) act = l.Substring(8).Trim();
+                else if (l.StartsWith("Actually:")) act = l.Substring(9).Trim();
             }
-            if (expected != null && actual != null)
-            {
-                TestContext.Progress.WriteLine($"     Expected : {expected}");
-                TestContext.Progress.WriteLine($"     Actual   : {actual}");
-            }
-            else
-            {
-                foreach (var raw in message.Split('\n'))
-                {
-                    var l = raw.Trim();
-                    if (!string.IsNullOrEmpty(l)) { TestContext.Progress.WriteLine($"     {l}"); break; }
-                }
-            }
+            if (exp != null && act != null) { Console.WriteLine($"     Expected : {exp}"); Console.WriteLine($"     Actual   : {act}"); }
+            else foreach (var raw in msg.Split('\n')) { var l=raw.Trim(); if(!string.IsNullOrEmpty(l)){Console.WriteLine($"     {l}");break;} }
         }
     }
 }

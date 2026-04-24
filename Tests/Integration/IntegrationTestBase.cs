@@ -11,7 +11,7 @@ namespace Project.Tests.Integration
         public virtual void SetUp()
         {
             World = BuildWorld();
-            TestOutputHelper.LogStart();
+            TestOutputHelper.LogStart(GetType());
         }
 
         [TearDown]

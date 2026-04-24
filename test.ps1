@@ -1,4 +1,5 @@
-param([string]$Target = "")
+param([Parameter(ValueFromRemainingArguments=$true)][string[]]$TargetParts = @())
+$Target = ($TargetParts -join ' ').Trim()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -25,9 +26,9 @@ function Invoke-DotnetTest([string]$Filter) {
     try {
         if ($Filter) {
             Write-Host "  filter : $Filter" -ForegroundColor DarkGray
-            & dotnet test $CsprojPath --filter $Filter --logger "console;verbosity=normal"
+            & dotnet test $CsprojPath --settings "$ScriptDir\test.runsettings" --filter $Filter --logger "console;verbosity=minimal"
         } else {
-            & dotnet test $CsprojPath --logger "console;verbosity=normal"
+            & dotnet test $CsprojPath --settings "$ScriptDir\test.runsettings" --filter "FullyQualifiedName!~Project.Tests" --logger "console;verbosity=minimal"
         }
     } finally {
         $ErrorActionPreference = $prevEAP
@@ -69,117 +70,149 @@ function Find-Folder([string]$Norm) {
         Select-Object -ExpandProperty FullName)
 }
 
+function Run-WithCoverage([string]$Filter, [string]$CovDir) {
+    $htmlDir = Join-Path $CovDir "html"
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        if ($Filter) {
+            Write-Host "  filter : $Filter" -ForegroundColor DarkGray
+            & dotnet test $CsprojPath --settings "$ScriptDir\test.runsettings" --filter $Filter --collect:"XPlat Code Coverage" --results-directory $CovDir --logger "console;verbosity=minimal"
+        } else {
+            & dotnet test $CsprojPath --settings "$ScriptDir\test.runsettings" --collect:"XPlat Code Coverage" --results-directory $CovDir --logger "console;verbosity=minimal"
+        }
+        $xml = @(Get-ChildItem -Path $CovDir -Filter "coverage.cobertura.xml" -Recurse -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
+        if ($xml.Count -gt 0) {
+            reportgenerator -reports:"$($xml[0].FullName)" -targetdir:"$htmlDir" -reporttypes:Html 2>$null | Out-Null
+            Write-Host "  Report : $htmlDir\index.html" -ForegroundColor DarkGray
+            Start-Process "$htmlDir\index.html"
+        }
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+}
+
 function Show-Info {
     $w = 62
     $line = '-' * $w
     Write-Host $line -ForegroundColor DarkGray
     Write-Host '  test - headless NUnit runner' -ForegroundColor White
+    Write-Host '  Run ./init.ps1 once to register ''test'' for all sessions.' -ForegroundColor DarkGray
     Write-Host $line -ForegroundColor DarkGray
     Write-Host ''
     Write-Host '  COMMANDS' -ForegroundColor Yellow
     Write-Host ''
     Write-Host '  test all' -ForegroundColor Cyan
-    Write-Host '      Run every test in the project (unit + integration).'
-    Write-Host ''
-    Write-Host '      Example:'
+    Write-Host '      Run your project tests (excludes built-in package tests).'
     Write-Host '        test all'
     Write-Host ''
-    Write-Host '  test <path/to/folder>' -ForegroundColor Cyan
-    Write-Host '      Run all tests inside a folder.'
-    Write-Host '      Path is relative to tool root (CSharpTestToolForUnity/).'
-    Write-Host '      Both slash directions accepted: / and \.'
-    Write-Host '      Note: View/Views folders are not testable and will error.'
+    Write-Host '  test examples' -ForegroundColor Cyan
+    Write-Host '      Run all built-in package tests (unit + integration + NSubstitute).'
+    Write-Host '        test examples'
     Write-Host ''
-    Write-Host '      Examples:'
+    Write-Host '  test <path/to/Folder>' -ForegroundColor Cyan
+    Write-Host '      Run all tests in a folder. Path relative to tool root.'
     Write-Host '        test Tests'
     Write-Host '        test Tests/Integration'
     Write-Host '        test Tests/UnitTests'
     Write-Host ''
     Write-Host '  test <path/to/Script.cs>' -ForegroundColor Cyan
-    Write-Host '      Run tests in a single script.'
-    Write-Host '      Path is relative to tool root (CSharpTestToolForUnity/).'
-    Write-Host '      .cs extension is required.'
-    Write-Host ''
-    Write-Host '      Examples:'
-    Write-Host '        test Scripts/Tests/EditMode/UnitTests/HealthSystemTests.cs'
-    Write-Host '        test Scripts/Tests/EditMode/Integration/CombatIntegrationTests.cs'
+    Write-Host '      Run tests in a single script. .cs extension required.'
+    Write-Host '        test Tests/UnitTests/HealthSystemTests.cs'
+    Write-Host '        test Tests/Integration/CombatIntegrationTests.cs'
     Write-Host ''
     Write-Host '  test info' -ForegroundColor Cyan
     Write-Host '      Show this help.'
-    Write-Host ''
-    Write-Host '      Example:'
     Write-Host '        test info'
     Write-Host ''
+    Write-Host '  COVERAGE FLAG' -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '  Add ''coverage'' anywhere in the command to collect code coverage,'
+    Write-Host '  generate an HTML report and open it in the browser.'
+    Write-Host ''
+    Write-Host '        test examples coverage'
+    Write-Host '        test all coverage'
+    Write-Host '        test Tests/UnitTests/HealthSystemTests.cs coverage'
+    Write-Host '        test Tests/Integration coverage'
+    Write-Host '        test coverage examples      # flag position does not matter'
+    Write-Host ''
     Write-Host '  TEST TYPES' -ForegroundColor Yellow
     Write-Host ''
-    Write-Host '  test coverage' -ForegroundColor Cyan
-    Write-Host '      Run all tests with code coverage. Outputs Cobertura XML.'
-    Write-Host ''
-    Write-Host '      Example:'
-    Write-Host '        test coverage'
-    Write-Host ''
-    Write-Host '  TEST TYPES' -ForegroundColor Yellow
-    Write-Host ''
-    Write-Host '  Unit tests      Tests\UnitTests\'
+    Write-Host '  Unit tests        Tests\UnitTests\'
     Write-Host '      Pure C# logic. No Unity engine. Fast (<1ms each).'
     Write-Host '      Frameworks: NUnit 4, NSubstitute 5, Shouldly 4'
     Write-Host ''
     Write-Host '  Integration tests  Tests\Integration\'
-    Write-Host '      Multiple systems together. Real logic + mocks/stubs.'
+    Write-Host '      Multiple real systems + mocks/stubs.'
     Write-Host '      Frameworks: NUnit 4, NSubstitute 5, Shouldly 4'
-    Write-Host '      Mocking: Substitute.For<T>() creates mocks and stubs.'
-    Write-Host '      Assertions: x.ShouldBe(y), x.ShouldNotBeNull(), etc.'
     Write-Host ''
     Write-Host $line -ForegroundColor DarkGray
 }
 
     Write-Host '  test examples' -ForegroundColor Cyan
-    Write-Host '      Run NSubstitute reference examples (mock, stub, spy, arg matchers).'
+    Write-Host '      Run all built-in package tests (100+ unit + integration + NSubstitute examples).'
     Write-Host ''
     Write-Host '      Example:'
-    Write-Host '        test examples'
+    Write-Host '        .\test examples'
     Write-Host ''
 # -- Main -------------------------------------------------------------------
 
 $t = $Target.Trim()
 
 if ($t.ToLower() -eq 'info') { Show-Info; exit 0 }
-if ([string]::IsNullOrWhiteSpace($t)) { Write-Host "Error: no command specified. Run 'test info' to see usage." -ForegroundColor Red; exit 1 }
+if ([string]::IsNullOrWhiteSpace($t)) { Write-Host "Error: no command specified. Run '.\test info' to see usage." -ForegroundColor Red; exit 1 }
 
-if ($t.ToLower() -eq 'all') {
-    Write-Host "Running ALL tests..." -ForegroundColor Cyan
-    Invoke-DotnetTest ""
+# Extract 'coverage' flag - works in any position of the command
+$hasCoverage = $t -match '\bcoverage\b'
+$base = ($t -replace '\bcoverage\b', '').Trim() -replace '\s+', ' '
+
+if ($base.ToLower() -eq 'all') {
+    if ($hasCoverage) {
+        Write-Host "Running project tests with coverage..." -ForegroundColor Cyan
+        Run-WithCoverage "FullyQualifiedName!~Project.Tests" (Join-Path $ScriptDir "coverage")
+    } else {
+        Write-Host "Running project tests..." -ForegroundColor Cyan
+        Invoke-DotnetTest ""
+    }
     exit $LASTEXITCODE
 }
 
-if ($t.ToLower() -eq 'coverage') {
-    Write-Host "Running coverage..." -ForegroundColor Cyan
-    $outDir = Join-Path $ScriptDir "coverage"
-    dotnet test $CsprojPath --collect:"XPlat Code Coverage" --results-directory $outDir --logger "console;verbosity=minimal"
-    $rep = @(Get-ChildItem -Path $outDir -Filter "coverage.cobertura.xml" -Recurse -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
-    if ($rep.Count -gt 0) { Write-Host "  Report : $($rep[0].FullName)" -ForegroundColor DarkGray }
+if ($base.ToLower() -eq 'examples') {
+    if ($hasCoverage) {
+        Write-Host "Running examples with coverage..." -ForegroundColor Cyan
+        Run-WithCoverage "FullyQualifiedName~Project.Tests" (Join-Path $ScriptDir "coverage-examples")
+    } else {
+        Write-Host "Running package example tests..." -ForegroundColor Cyan
+        Invoke-DotnetTest "FullyQualifiedName~Project.Tests"
+    }
     exit $LASTEXITCODE
 }
 
-if ($t.ToLower() -eq 'examples') {
-    Write-Host "Running examples..." -ForegroundColor Cyan
-    dotnet test $CsprojPath --filter "FullyQualifiedName~SubstituteExamples" --logger "console;verbosity=normal"
-    exit $LASTEXITCODE
-}
-
-# Normalize slashes, build full path from Assets root
-$norm = $t.TrimEnd('\/').Replace('/', '\')
+# Normalize slashes for path commands
+$norm = $base.TrimEnd('\/').Replace('/', '\')
 $full = Join-Path $SearchRoot $norm
 
 # Script: must end with .cs
 if ($norm -match '\.cs$') {
     $fileMatches = @(Find-File $norm)
-    if ($fileMatches.Count -eq 1) { Run-File $fileMatches[0]; exit $LASTEXITCODE }
+    if ($fileMatches.Count -eq 1) {
+        if ($hasCoverage) {
+            $classes = @(Get-TestClassNames $fileMatches[0] | Where-Object { $_ })
+            $filter = Build-Filter $classes
+            Write-Host "Running [$(Split-Path -Leaf $fileMatches[0])] with coverage..." -ForegroundColor Cyan
+            Run-WithCoverage $filter (Join-Path $ScriptDir "coverage")
+        } else { Run-File $fileMatches[0] }
+        exit $LASTEXITCODE
+    }
     if ($fileMatches.Count -gt 1) {
         Write-Host "Ambiguous: '$norm' matches $($fileMatches.Count) scripts:" -ForegroundColor Yellow
         $fileMatches | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
         $choice = (Read-Host 'Enter full path').Trim()
-        if (Test-Path $choice -PathType Leaf) { Run-File $choice; exit $LASTEXITCODE }
+        if (Test-Path $choice -PathType Leaf) {
+            if ($hasCoverage) { $cls=@(Get-TestClassNames $choice|Where-Object{$_}); Run-WithCoverage (Build-Filter $cls) (Join-Path $ScriptDir "coverage") }
+            else { Run-File $choice }
+            exit $LASTEXITCODE
+        }
         Write-Host "Error: '$choice' is not a valid file." -ForegroundColor Red; exit 1
     }
     Write-Host "Error: script not found: $norm" -ForegroundColor Red
@@ -189,21 +222,39 @@ if ($norm -match '\.cs$') {
 
 # Folder: no .cs extension
 $fMatches = @(Find-Folder $norm)
-if ($fMatches.Count -eq 1) { Run-Folder $fMatches[0]; exit $LASTEXITCODE }
+if ($fMatches.Count -eq 1) {
+    if ($hasCoverage) {
+        $files = @(Get-ChildItem -Path $fMatches[0] -Filter '*.cs' -Recurse)
+        $classes = @($files | ForEach-Object { Get-TestClassNames $_.FullName } | Where-Object { $_ })
+        $rel = ($fMatches[0] -ireplace [regex]::Escape($SearchRoot), '.')
+        Write-Host "Running folder [$rel] with coverage..." -ForegroundColor Cyan
+        Run-WithCoverage (Build-Filter $classes) (Join-Path $ScriptDir "coverage")
+    } else { Run-Folder $fMatches[0] }
+    exit $LASTEXITCODE
+}
 if ($fMatches.Count -gt 1) {
     Write-Host "Ambiguous: '$norm' matches $($fMatches.Count) folders:" -ForegroundColor Yellow
     $fMatches | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
     $choice = (Read-Host 'Enter full path').Trim()
-    if (Test-Path $choice -PathType Container) { Run-Folder $choice; exit $LASTEXITCODE }
+    if (Test-Path $choice -PathType Container) {
+        if ($hasCoverage) {
+            $files=@(Get-ChildItem -Path $choice -Filter '*.cs' -Recurse)
+            $cls=@($files|ForEach-Object{Get-TestClassNames $_.FullName}|Where-Object{$_})
+            Run-WithCoverage (Build-Filter $cls) (Join-Path $ScriptDir "coverage")
+        } else { Run-Folder $choice }
+        exit $LASTEXITCODE
+    }
     Write-Host "Error: '$choice' is not a valid folder." -ForegroundColor Red; exit 1
 }
 
 # Nothing matched
-Write-Host "Error: '$norm' not found in tool folder." -ForegroundColor Red
-if (Test-Path (Join-Path $SearchRoot ($norm + '.cs')) -PathType Leaf) {
-    Write-Host "  Did you mean: $norm.cs  (add .cs extension)" -ForegroundColor DarkGray
+if ($norm -notmatch '[/\\]' -and $norm -notmatch '\.cs$') {
+    Write-Host "Unknown command: '$t'." -ForegroundColor Red
+    Write-Host "  Run '.\test info' to see available commands." -ForegroundColor DarkGray
 } else {
-    Write-Host "  For scripts, add .cs extension. For folders, check spelling." -ForegroundColor DarkGray
-    Write-Host "  Run 'test info' to see usage." -ForegroundColor DarkGray
+    Write-Host "Not found: '$t'." -ForegroundColor Red
+    if (Test-Path (Join-Path $SearchRoot ($norm + '.cs')) -PathType Leaf) {
+        Write-Host "  Did you mean: $norm.cs  (add .cs extension)" -ForegroundColor DarkGray
+    }
 }
 exit 1

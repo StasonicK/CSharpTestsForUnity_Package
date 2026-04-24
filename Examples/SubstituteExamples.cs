@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using NSubstitute;
-using NSubstitute.ReceivedExtensions;
 using Shouldly;
 using Project.Runtime.Logic;
 using Project.Tests.Common;
@@ -10,15 +9,17 @@ namespace Project.Tests.Examples
     /// <summary>
     /// Runnable NSubstitute reference examples.
     /// Demonstrates: mock, stub, spy, arg matchers, arg capture.
-    /// Lightweight — no TestWorld, no EventBus. Each test is self-contained.
+    /// Lightweight - no TestWorld, no EventBus. Each test is self-contained.
     ///
     /// Run: test examples
     /// </summary>
     [TestFixture, Category("Examples")]
     public class SubstituteExamples
     {
-        [SetUp]    public void Setup()    => TestOutputHelper.LogStart();
+        [SetUp]    public void Setup()    => TestOutputHelper.LogStart(GetType());
         [TearDown] public void Teardown() => TestOutputHelper.LogEnd();
+
+        // ---- MOCK: verify a method was called --------------------------------
 
         [Test]
         public void Mock_VerifiesExactCall()
@@ -39,6 +40,8 @@ namespace Project.Tests.Examples
             analytics.Received(3).TrackEvent("hit");
         }
 
+        // ---- STUB: configure return values -----------------------------------
+
         [Test]
         public void Stub_Returns_ConfiguredValue()
         {
@@ -53,6 +56,7 @@ namespace Project.Tests.Examples
         public void Stub_Returns_Default_ForUnconfiguredCalls()
         {
             var persistence = Substitute.For<IPersistenceService>();
+            // No stub configured - default for bool is false
             persistence.Exists("anything").ShouldBeFalse();
         }
 
@@ -60,16 +64,22 @@ namespace Project.Tests.Examples
         public void Stub_ThrowsOnCall()
         {
             var persistence = Substitute.For<IPersistenceService>();
+            // Setup configures Save<object> - cast the argument to match
             persistence.When(p => p.Save(Arg.Any<string>(), Arg.Any<object>()))
                        .Do(_ => throw new System.IO.IOException("Disk full"));
-            Should.Throw<System.IO.IOException>(() => persistence.Save("key", 42));
+            // Cast to object so T = object, matching the When/Do setup
+            Should.Throw<System.IO.IOException>(() =>
+                persistence.Save("key", (object)42));
         }
+
+        // ---- ARG MATCHERS ---------------------------------------------------
 
         [Test]
         public void ArgMatcher_Any_MatchesAllValues()
         {
             var analytics = Substitute.For<IAnalyticsService>();
             analytics.TrackEvent("some_event");
+            // Arg.Any<T> inside Received() - matches any string argument
             analytics.Received(1).TrackEvent(Arg.Any<string>());
         }
 
@@ -79,6 +89,7 @@ namespace Project.Tests.Examples
             var analytics = Substitute.For<IAnalyticsService>();
             analytics.TrackEvent("player_died");
             analytics.TrackEvent("player_hit");
+            // Arg.Is with predicate - matches only "player_" prefixed events
             analytics.Received(2).TrackEvent(Arg.Is<string>(s => s.StartsWith("player")));
         }
 
@@ -93,10 +104,13 @@ namespace Project.Tests.Examples
             captured.ShouldBe("enemy_killed");
         }
 
+        // ---- SPY: selective behavior via When/Do ----------------------------
+
         [Test]
         public void Spy_WhenDo_SelectiveBehavior()
         {
             var spy = Substitute.For<IAnalyticsService>();
+            // Configure a no-op only for "skip" - other calls are unaffected
             spy.When(a => a.TrackEvent("skip")).Do(_ => { });
             spy.TrackEvent("normal");
             spy.TrackEvent("skip");
