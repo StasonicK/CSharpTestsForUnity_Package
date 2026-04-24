@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Redirect build output to ~ folders which Unity ignores -->
+    <BaseIntermediateOutputPath>obj~/</BaseIntermediateOutputPath>
+    <OutputPath>bin~/</OutputPath>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -24,6 +27,10 @@
   </ItemGroup>
 
   <!-- Source files — SDK auto-includes all *.cs in project folder (Runtime/, Tests/, Examples/) -->
+  <ItemGroup>
+    <!-- Editor scripts require UnityEditor.dll — exclude from headless dotnet build -->
+    <Compile Remove="Editor\**\*.cs" />
+  </ItemGroup>
   <!--
     TO TEST YOUR PROJECT SCRIPTS: uncomment and adjust the path below.
     Add only pure C# files — exclude Views/ and MonoBehaviours.
