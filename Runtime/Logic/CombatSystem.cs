@@ -45,10 +45,10 @@ namespace Project.Runtime.Logic
 
         private void HandleHealthChanged(float current, float max)
         {
-            // Guard against MaxHealth == 0 to avoid NaN in analytics
-            float fraction = max > 0f ? current / max : 0f;
-            _analytics.TrackEvent("health_changed", "fraction", fraction);
-            _healthChangedBus.Publish(new PlayerHealthChangedEvent(_playerId, current, max));
+            // Publish event first, then use its Fraction (already guards max==0)
+            var evt = new PlayerHealthChangedEvent(_playerId, current, max);
+            _analytics.TrackEvent("health_changed", "fraction", evt.Fraction);
+            _healthChangedBus.Publish(evt);
         }
 
         private void HandleDeath()

@@ -42,7 +42,8 @@ namespace CSharpTestToolForUnity.Editor
             if (path == null) return;
             var p = new System.Diagnostics.ProcessStartInfo();
             p.FileName = "powershell.exe";
-            p.Arguments = "-ExecutionPolicy Bypass -NoExit -File \"" + Path.Combine(path, "test.ps1") + "\" examples";
+            // Use -Command so 'examples' is passed correctly as an argument
+            p.Arguments = "-ExecutionPolicy Bypass -NoExit -Command \"& '" + Path.Combine(path, "test.ps1").Replace("'", "''") + "' examples\"";
             p.UseShellExecute = true;
             p.WorkingDirectory = path;
             System.Diagnostics.Process.Start(p);

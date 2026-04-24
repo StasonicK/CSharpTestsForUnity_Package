@@ -5,7 +5,9 @@ namespace Project.Tests.Common
 {
     public static class TestOutputHelper
     {
-        private static string? _lastClass = null;
+        // Per-process static: resets between dotnet test invocations (new process each time).
+        // [ThreadStatic] would be needed for parallel test execution.
+        [System.ThreadStatic] private static string? _lastClass;
 
         public static void LogStart(Type testClass)
         {

@@ -84,8 +84,13 @@ function Run-WithCoverage([string]$Filter, [string]$CovDir) {
         $xml = @(Get-ChildItem -Path $CovDir -Filter "coverage.cobertura.xml" -Recurse -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
         if ($xml.Count -gt 0) {
             reportgenerator -reports:"$($xml[0].FullName)" -targetdir:"$htmlDir" -reporttypes:Html 2>$null | Out-Null
-            Write-Host "  Report : $htmlDir\index.html" -ForegroundColor DarkGray
-            Start-Process "$htmlDir\index.html"
+            if (Test-Path "$htmlDir\index.html") {
+                Write-Host "  Report : $htmlDir\index.html" -ForegroundColor DarkGray
+                Start-Process "$htmlDir\index.html"
+            } else {
+                Write-Host "  Report generation failed. Is reportgenerator installed?" -ForegroundColor Yellow
+                Write-Host "  Install: dotnet tool install -g dotnet-reportgenerator-globaltool" -ForegroundColor DarkGray
+            }
         }
     } finally {
         $ErrorActionPreference = $prevEAP
@@ -162,9 +167,10 @@ $t = $Target.Trim()
 if ($t.ToLower() -eq 'info') { Show-Info; exit 0 }
 if ([string]::IsNullOrWhiteSpace($t)) { Write-Host "Error: no command specified. Run '.\test info' to see usage." -ForegroundColor Red; exit 1 }
 
-# Extract 'coverage' flag - works in any position of the command
-$hasCoverage = $t -match '\bcoverage\b'
-$base = ($t -replace '\bcoverage\b', '').Trim() -replace '\s+', ' '
+# Extract 'coverage' flag - split by spaces so it never matches inside a path
+$tokens = $t -split '\s+'
+$hasCoverage = ($tokens -contains 'coverage')
+$base = ($tokens | Where-Object { $_ -ine 'coverage' }) -join ' '
 
 if ($base.ToLower() -eq 'all') {
     if ($hasCoverage) {
@@ -172,6 +178,7 @@ if ($base.ToLower() -eq 'all') {
         Run-WithCoverage "FullyQualifiedName!~Project.Tests" (Join-Path $ScriptDir "coverage")
     } else {
         Write-Host "Running project tests..." -ForegroundColor Cyan
+        Write-Host "  (Add your project scripts to the csproj and use a custom namespace)" -ForegroundColor DarkGray
         Invoke-DotnetTest ""
     }
     exit $LASTEXITCODE

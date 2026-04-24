@@ -33,5 +33,6 @@ if ($raw.Contains($marker)) {
 
 Add-Content -Path $PROFILE -Value $entry
 Write-Host '  Done. Profile updated:' -ForegroundColor Green
+Write-Host '  Note: if you move this project folder, re-run ./init.ps1 to update the path.' -ForegroundColor DarkGray
 Write-Host "  $PROFILE" -ForegroundColor DarkGray
 Write-Host '  Restart PowerShell to activate.' -ForegroundColor DarkGray
